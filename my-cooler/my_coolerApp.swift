@@ -23,27 +23,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let controller = FanController()
     private var statusItem: NSStatusItem?
     private var popover: NSPopover?
-    private var labelTask: Task<Void, Never>?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = item.button {
             button.target = self
             button.action = #selector(handleClick(_:))
             button.sendAction(on: [.leftMouseUp, .rightMouseUp])
-            button.imagePosition = .imageLeft
+
+            let hosting = NSHostingView(
+                rootView: StatusBarFanIcon(controller: controller)
+            )
+            hosting.translatesAutoresizingMaskIntoConstraints = false
+            button.addSubview(hosting)
+            NSLayoutConstraint.activate([
+                hosting.centerXAnchor.constraint(equalTo: button.centerXAnchor),
+                hosting.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+            ])
         }
         statusItem = item
 
-        let pop = NSPopover()
-        pop.behavior = .transient
-        pop.contentSize = NSSize(width: 280, height: 260)
-        pop.contentViewController = NSHostingController(
+        let hostingController = NSHostingController(
             rootView: ContentView(controller: controller)
         )
-        popover = pop
+        hostingController.sizingOptions = .preferredContentSize
 
-        startLabelUpdates()
+        let pop = NSPopover()
+        pop.behavior = .transient
+        pop.contentViewController = hostingController
+        popover = pop
     }
 
     // MARK: - Click handling
@@ -84,34 +92,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @objc private func quit() {
         NSApp.terminate(nil)
     }
+}
 
-    // MARK: - Status bar label
+private struct StatusBarFanIcon: View {
+    let controller: FanController
 
-    private func startLabelUpdates() {
-        labelTask = Task { @MainActor [weak self] in
-            while !Task.isCancelled {
-                self?.refreshLabel()
-                try? await Task.sleep(for: .seconds(1))
-            }
-        }
-    }
-
-    private func refreshLabel() {
-        guard let button = statusItem?.button else { return }
+    private var spinning: Bool {
         // When the user has explicitly disabled the fan in manual mode, mirror
         // intent rather than hardware so transient ramp-ups during the mode
         // flip don't blip the status bar.
-        let primary: Float
-        if controller.controlEnabled && !controller.fanEnabled {
-            primary = 0
-        } else {
-            primary = controller.fans.first?.actual ?? 0
-        }
-        let spinning = primary > 0
-        button.image = NSImage(
-            systemSymbolName: spinning ? "fan.fill" : "fan",
-            accessibilityDescription: spinning ? "Fan running" : "Fan idle"
-        )
-        button.title = controller.fans.isEmpty ? "" : " \(Int(primary))"
+        if controller.controlEnabled && !controller.fanEnabled { return false }
+        return (controller.fans.first?.actual ?? 0) > 0
+    }
+
+    var body: some View {
+        Image(systemName: "fan.fill")
+            .symbolEffect(.rotate.clockwise, options: .repeat(.continuous), isActive: spinning)
+            .accessibilityLabel(spinning ? "Fan running" : "Fan idle")
     }
 }

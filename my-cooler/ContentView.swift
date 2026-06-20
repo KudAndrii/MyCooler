@@ -62,30 +62,24 @@ struct ContentView: View {
             Toggle("Fan enabled", isOn: fanEnabledBinding)
                 .toggleStyle(.switch)
                 .disabled(!controller.controlEnabled || controller.isUnlocking)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack {
-                    Text("Speed")
-                        .font(.subheadline)
-                    Spacer()
-                    Text("\(Int(controller.targetRPM)) RPM")
-                        .font(.subheadline.monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-                Slider(
-                    value: $controller.targetRPM,
-                    in: controller.sharedMin...max(
-                        controller.sharedMax,
-                        controller.sharedMin + 1
+            if controller.controlEnabled && controller.fanEnabled && !controller.isUnlocking {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Text("Speed")
+                            .font(.subheadline)
+                        Spacer()
+                        Text("\(Int(controller.targetRPM)) RPM")
+                            .font(.subheadline.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                    Slider(
+                        value: $controller.targetRPM,
+                        in: controller.sharedMin...max(
+                            controller.sharedMax,
+                            controller.sharedMin + 1
+                        )
                     )
-                )
-                .disabled(!(controller.controlEnabled && controller.fanEnabled) || controller.isUnlocking)
-                HStack {
-                    Text("\(Int(controller.sharedMin))")
-                    Spacer()
-                    Text("\(Int(controller.sharedMax))")
                 }
-                .font(.caption2.monospacedDigit())
-                .foregroundStyle(.secondary)
             }
         }
     }
