@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "5C9A85C12FDF09E900005881"
-               BuildableName = "my-cooler.app"
+               BuildableName = "MyCooler.app"
                BlueprintName = "my-cooler"
                ReferencedContainer = "container:my-cooler.xcodeproj">
             </BuildableReference>
@@ -46,7 +46,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "5C9A85C12FDF09E900005881"
-            BuildableName = "my-cooler.app"
+            BuildableName = "MyCooler.app"
             BlueprintName = "my-cooler"
             ReferencedContainer = "container:my-cooler.xcodeproj">
          </BuildableReference>
@@ -63,7 +63,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "5C9A85C12FDF09E900005881"
-            BuildableName = "my-cooler.app"
+            BuildableName = "MyCooler.app"
             BlueprintName = "my-cooler"
             ReferencedContainer = "container:my-cooler.xcodeproj">
          </BuildableReference>
