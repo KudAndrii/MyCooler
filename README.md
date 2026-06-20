@@ -7,8 +7,9 @@
 <p align="center">
   A status-bar-only macOS app for watching and steering your Mac's fans
   on Apple Silicon.<br/>
-  Built with SwiftUI and talks to <code>AppleSMC</code> directly — no
-  privileged helper, no kext.
+  Built with SwiftUI. SMC reads happen in-process; SMC writes go through
+  a tiny on-demand launchd helper registered via <code>SMAppService</code>
+  — no kext, no installer.
 </p>
 
 | Idle | Running |
@@ -70,11 +71,26 @@ Right-click the status item for **Quit**.
 
 ## How it works
 
-Everything goes through the user-space `AppleSMC` IOKit service. There
-is **no privileged helper, no kext, no signed installer** — just an
-`io_connect_t` opened with `IOServiceOpen` and `SMCParamStruct`
-payloads sent via `IOConnectCallStructMethod` selector 2
-(`kSMCHandleYPCEvent`).
+The app talks to the user-space `AppleSMC` IOKit service: an
+`io_connect_t` opened with `IOServiceOpen` and `SMCParamStruct` payloads
+sent via `IOConnectCallStructMethod` selector 2 (`kSMCHandleYPCEvent`).
+Reads succeed as any user; writes return `kIOReturnNotPrivileged` unless
+EUID is `0`. To avoid running the whole app as root, MyCooler ships a
+small privileged helper:
+
+- **Main app** — polls SMC for reads (`FNum`, `F{N}Ac`, `F{N}Mn`,
+  `F{N}Mx`) and renders the popover.
+- **Helper** (`com.andrii-kud.my-cooler.helper`) — a launchd-managed
+  command-line tool embedded in `MyCooler.app/Contents/MacOS/`. Its
+  plist sits at `Contents/Library/LaunchDaemons/` and is registered
+  on first launch via `SMAppService.daemon(...).register()`. macOS
+  prompts you once to approve it under **Login Items & Extensions**;
+  after that launchd spawns it on demand whenever the app opens an
+  XPC connection, and reaps it shortly after the connection closes.
+- **XPC** — `NSXPCConnection(... options: .privileged)` between app
+  and helper. SMC writes (`Ftst`, `F{N}Md`, `F{N}Tg`) all live
+  server-side so the Ftst unlock dance runs as a single round trip,
+  with no half-completed states.
 
 Polled keys (every second):
 
@@ -133,6 +149,11 @@ Requires **macOS 26 or later** and an Apple Silicon Mac.
 2. Open the DMG and drag **MyCooler.app** into `/Applications`.
 3. First launch: right-click → **Open**. The build isn't notarised, so
    Gatekeeper warns once; after that it opens normally.
+4. macOS will show a Background Items notification asking you to
+   approve **MyCooler Helper**. Open **System Settings → General →
+   Login Items & Extensions** and toggle it on. The helper only runs
+   while you're actually moving sliders — launchd reaps it when the
+   XPC connection closes.
 
 ## Build from source
 

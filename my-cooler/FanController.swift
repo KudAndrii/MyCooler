@@ -19,10 +19,19 @@ final class FanController {
         var maxRPM: Float = 0
     }
 
+    enum HelperStatus: Equatable {
+        case unknown
+        case enabled
+        case requiresApproval
+        case notRegistered
+        case failed(String)
+    }
+
     private(set) var fans: [Fan] = []
     private(set) var readError: String?
     private(set) var writeError: String?
     private(set) var isUnlocking: Bool = false
+    var helperStatus: HelperStatus = .unknown
     var lastError: String? { writeError ?? readError }
 
     var sharedMin: Float { fans.map(\.minRPM).max() ?? 0 }
@@ -48,21 +57,21 @@ final class FanController {
     var fanEnabled: Bool = false {
         didSet {
             guard oldValue != fanEnabled, controlEnabled, !suppressWrites else { return }
-            applyManual()
+            Task { await applyManual() }
         }
     }
 
     var targetRPM: Float = 0 {
         didSet {
             guard oldValue != targetRPM, controlEnabled, fanEnabled, !suppressWrites else { return }
-            applyManual()
+            Task { await applyManual() }
         }
     }
 
     private let smc: SMC?
+    private let xpc = XPCClient()
     private var pollTask: Task<Void, Never>?
     private var suppressWrites = false
-    private var didSetFtst = false
 
     init() {
         do {
@@ -84,124 +93,58 @@ final class FanController {
         writeError = nil
     }
 
-    // MARK: - Take / release control (Apple Silicon Ftst unlock)
+    // MARK: - Take / release control via privileged helper
 
     private func takeControl() async {
-        guard let smc else { return }
         isUnlocking = true
         defer { isUnlocking = false }
         writeError = nil
 
-        // Phase 1: enter diagnostic mode so thermalmonitord yields.
-        do {
-            try smc.writeUInt8(1, key: "Ftst")
-            didSetFtst = true
-        } catch {
-            report(write: "Ftst=1 write: \(error)")
-            return
-        }
-
         guard !fans.isEmpty else { return }
 
-        // Phase 2: poll each fan's mode key, wait for transition out of 3 (system mode).
-        let waitDeadline = Date().addingTimeInterval(10)
-        var released = Set<Int>()
-        while released.count < fans.count, Date() < waitDeadline {
-            for i in fans.indices where !released.contains(i) {
-                if let mode = try? smc.readUInt8("F\(i)Md"), mode != 3 {
-                    released.insert(i)
-                }
-            }
-            if released.count < fans.count {
-                try? await Task.sleep(for: .milliseconds(100))
-            }
-        }
-        guard released.count == fans.count else {
-            report(write: "Daemon yield timeout (\(released.count)/\(fans.count) fans)")
-            return
-        }
-
-        // Decide initial state before the mode flip so we can pin the target
-        // immediately — otherwise the SMC briefly ramps to its default RPM in
-        // the gap between F{N}Md=1 and the first F{N}Tg write.
+        // Decide initial state before the unlock so the helper can pin
+        // the target immediately — otherwise the SMC briefly ramps to
+        // its default RPM between F{N}Md=1 and the first F{N}Tg write.
         let initialEnabled = fans.contains { $0.actual > 0 }
         let avgActual = fans.map(\.actual).reduce(0, +) / Float(max(fans.count, 1))
         let initialTarget: Float = initialEnabled ? clampedTarget(avgActual) : 0
 
-        // Phase 3: switch each fan into manual mode and immediately pin its
-        // target. The first Md writes may fail briefly while the daemon is
-        // still letting go; retry for a few seconds.
-        for i in fans.indices {
-            let retryDeadline = Date().addingTimeInterval(6)
-            var ok = false
-            while !ok, Date() < retryDeadline {
-                do {
-                    try smc.writeUInt8(1, key: "F\(i)Md")
-                    ok = true
-                } catch {
-                    try? await Task.sleep(for: .milliseconds(200))
-                }
-            }
-            guard ok else {
-                report(write: "F\(i)Md=1 write failed after retry")
-                return
-            }
-            try? smc.writeFloat(initialTarget, key: "F\(i)Tg")
+        if let error = await xpc.takeControl(fanCount: fans.count,
+                                             initialEnabled: initialEnabled,
+                                             initialTargetRPM: initialTarget) {
+            report(write: error)
+            return
         }
 
-        // Phase 4: publish UI state, then apply canonically.
         suppressWrites = true
         fanEnabled = initialEnabled
         targetRPM = clampedTarget(initialEnabled ? avgActual : sharedMin)
         suppressWrites = false
 
-        applyManual()
+        await applyManual()
     }
 
     private func releaseControl() async {
-        guard let smc else { return }
-        var failed: String?
-        for i in fans.indices {
-            do {
-                try smc.writeUInt8(0, key: "F\(i)Md")
-            } catch SMCError.smcError(130) {
-                // Expected on M3 Pro/Max — the mode key isn't writable while
-                // still in manual. Releasing Ftst below transitions the daemon
-                // back to system mode, which forces F{N}Md back to 3 anyway.
-            } catch {
-                if failed == nil { failed = "F\(i)Md=0 restore: \(error)" }
-            }
-        }
-        if didSetFtst {
-            do {
-                try smc.writeUInt8(0, key: "Ftst")
-                didSetFtst = false
-            } catch {
-                if failed == nil { failed = "Ftst=0: \(error)" }
-            }
-        }
-        if let failed {
-            log.error("\(failed, privacy: .public)")
-            writeError = failed
+        let count = fans.count
+        if let error = await xpc.releaseControl(fanCount: count) {
+            report(write: error)
         } else {
             writeError = nil
         }
     }
 
-    private func applyManual() {
-        guard let smc, controlEnabled else { return }
+    private func applyManual() async {
+        guard controlEnabled else { return }
         let value: Float = fanEnabled ? clampedTarget(targetRPM) : 0
-        var failed: String?
+        var firstError: String?
         for i in fans.indices {
-            do {
-                try smc.writeFloat(value, key: "F\(i)Tg")
-            } catch {
-                if failed == nil { failed = "F\(i)Tg write: \(error)" }
+            if let error = await xpc.setFanRPM(fanIndex: i, rpm: value) {
+                if firstError == nil { firstError = "F\(i)Tg write: \(error)" }
             }
         }
-        if let failed {
-            log.error("\(failed, privacy: .public)")
-            writeError = failed
+        if let firstError {
+            log.error("\(firstError, privacy: .public)")
+            writeError = firstError
         } else {
             writeError = nil
         }

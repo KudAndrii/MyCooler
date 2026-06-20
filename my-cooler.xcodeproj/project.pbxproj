@@ -6,9 +6,67 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		5CA456162FE73D06006D073C /* com.andrii-kud.my-cooler.helper in Embed Helper Tool */ = {isa = PBXBuildFile; fileRef = 5CA455FE2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		5CA456132FE73CB7006D073C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5C9A85BA2FDF09E800005881 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5CA455FD2FE737D2006D073C;
+			remoteInfo = "com.andrii-kud.my-cooler.helper";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5CA455FC2FE737D2006D073C /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		5CA456102FE73BA7006D073C /* Copy LaunchDaemon plist */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LaunchDaemons;
+			dstSubfolderSpec = 1;
+			files = (
+			);
+			name = "Copy LaunchDaemon plist";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5CA456152FE73CCF006D073C /* Embed Helper Tool */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 6;
+			files = (
+				5CA456162FE73D06006D073C /* com.andrii-kud.my-cooler.helper in Embed Helper Tool */,
+			);
+			name = "Embed Helper Tool";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		5C9A85C22FDF09E900005881 /* MyCooler.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MyCooler.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5CA455FE2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "com.andrii-kud.my-cooler.helper"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
+		5CA456122FE73BE3006D073C /* Exceptions for "com.andrii-kud.my-cooler.helper" folder in "Copy LaunchDaemon plist" phase from "my-cooler" target */ = {
+			isa = PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet;
+			buildPhase = 5CA456102FE73BA7006D073C /* Copy LaunchDaemon plist */;
+			membershipExceptions = (
+				"com.andrii-kud.my-cooler.helper.plist",
+			);
+		};
+/* End PBXFileSystemSynchronizedGroupBuildPhaseMembershipExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5C9A85C42FDF09E900005881 /* my-cooler */ = {
@@ -16,10 +74,25 @@
 			path = "my-cooler";
 			sourceTree = "<group>";
 		};
+		5CA455FF2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				5CA456122FE73BE3006D073C /* Exceptions for "com.andrii-kud.my-cooler.helper" folder in "Copy LaunchDaemon plist" phase from "my-cooler" target */,
+			);
+			path = "com.andrii-kud.my-cooler.helper";
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		5C9A85BF2FDF09E900005881 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5CA455FB2FE737D2006D073C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				5C9A85C42FDF09E900005881 /* my-cooler */,
+				5CA455FF2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */,
 				5C9A85C32FDF09E900005881 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				5C9A85C22FDF09E900005881 /* MyCooler.app */,
+				5CA455FE2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,10 +130,13 @@
 				5C9A85BE2FDF09E900005881 /* Sources */,
 				5C9A85BF2FDF09E900005881 /* Frameworks */,
 				5C9A85C02FDF09E900005881 /* Resources */,
+				5CA456102FE73BA7006D073C /* Copy LaunchDaemon plist */,
+				5CA456152FE73CCF006D073C /* Embed Helper Tool */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				5CA456142FE73CB7006D073C /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				5C9A85C42FDF09E900005881 /* my-cooler */,
@@ -69,6 +147,28 @@
 			productName = "my-cooler";
 			productReference = 5C9A85C22FDF09E900005881 /* MyCooler.app */;
 			productType = "com.apple.product-type.application";
+		};
+		5CA455FD2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 5CA456042FE737D2006D073C /* Build configuration list for PBXNativeTarget "com.andrii-kud.my-cooler.helper" */;
+			buildPhases = (
+				5CA455FA2FE737D2006D073C /* Sources */,
+				5CA455FB2FE737D2006D073C /* Frameworks */,
+				5CA455FC2FE737D2006D073C /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5CA455FF2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */,
+			);
+			name = "com.andrii-kud.my-cooler.helper";
+			packageProductDependencies = (
+			);
+			productName = "com.andrii-kud.my-cooler.helper";
+			productReference = 5CA455FE2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */;
+			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -82,6 +182,10 @@
 				TargetAttributes = {
 					5C9A85C12FDF09E900005881 = {
 						CreatedOnToolsVersion = 26.5;
+					};
+					5CA455FD2FE737D2006D073C = {
+						CreatedOnToolsVersion = 26.5;
+						LastSwiftMigration = 2650;
 					};
 				};
 			};
@@ -100,6 +204,7 @@
 			projectRoot = "";
 			targets = (
 				5C9A85C12FDF09E900005881 /* my-cooler */,
+				5CA455FD2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */,
 			);
 		};
 /* End PBXProject section */
@@ -122,7 +227,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		5CA455FA2FE737D2006D073C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		5CA456142FE73CB7006D073C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5CA455FD2FE737D2006D073C /* com.andrii-kud.my-cooler.helper */;
+			targetProxy = 5CA456132FE73CB7006D073C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		5C9A85CB2FDF09E900005881 /* Debug */ = {
@@ -263,7 +383,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.andrii-kud.my-cooler";
 				PRODUCT_NAME = MyCooler;
 				REGISTER_APP_GROUPS = YES;
@@ -296,7 +416,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.0;
+				MARKETING_VERSION = 1.0.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.andrii-kud.my-cooler";
 				PRODUCT_NAME = MyCooler;
 				REGISTER_APP_GROUPS = YES;
@@ -304,6 +424,41 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		5CA456022FE737D2006D073C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "com.andrii-kud.my-cooler.helper/helper.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.andrii-kud.my-cooler.helper";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		5CA456032FE737D2006D073C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = "com.andrii-kud.my-cooler.helper/helper.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CREATE_INFOPLIST_SECTION_IN_BINARY = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.andrii-kud.my-cooler.helper";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -326,6 +481,15 @@
 			buildConfigurations = (
 				5C9A85CE2FDF09E900005881 /* Debug */,
 				5C9A85CF2FDF09E900005881 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		5CA456042FE737D2006D073C /* Build configuration list for PBXNativeTarget "com.andrii-kud.my-cooler.helper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5CA456022FE737D2006D073C /* Debug */,
+				5CA456032FE737D2006D073C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

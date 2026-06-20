@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.andrii-kud.my-cooler.helper</string>
+    <key>BundleProgram</key>
+    <string>Contents/MacOS/com.andrii-kud.my-cooler.helper</string>
+    <key>MachServices</key>
+    <dict>
+        <key>com.andrii-kud.my-cooler.helper</key>
+        <true/>
+    </dict>
+    <key>RunAtLoad</key>
+    <false/>
+    <key>AssociatedBundleIdentifiers</key>
+    <array>
+        <string>com.andrii-kud.my-cooler</string>
+    </array>
+</dict>
+</plist>
