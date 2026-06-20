@@ -1,4 +1,6 @@
-<!-- TODO: app icon — replace with <img src="./repo-assets/my-cooler_icon.png" alt="MyCooler icon" width="128" height="128"/> once the icon is in repo-assets/ -->
+<p align="center">
+  <img src="./repo-assets/my-cooler_icon.png" alt="MyCooler icon" width="128" height="128"/>
+</p>
 
 <h1 align="center">MyCooler</h1>
 
@@ -9,15 +11,36 @@
   privileged helper, no kext.
 </p>
 
-<!-- TODO: popover screenshot — replace with <img src="./repo-assets/my-cooler_popover.png" alt="MyCooler popover" width="360"/> once the screenshot is in repo-assets/ -->
+| Idle | Running |
+| --- | --- |
+| ![MyCooler popover — idle](./repo-assets/my-cooler_popover-idle.png) | ![MyCooler popover — running](./repo-assets/my-cooler_popover-running.png) |
+| Default state — macOS owns the fans, both toggles off, the slider is hidden, and the header icon is the outline fan. The per-fan list still reports live actual RPM (here, `0` because the fans are stopped). | After flipping *Take control* and *Fan enabled*, the speed slider appears, bounded by the tightest envelope of every fan's reported min/max. The header icon flips to the filled, blue fan. |
 
 ## Why this exists
 
-MyCooler is **open source, free, and built for personal use** — shared
-with everyone tired of paying for software this small yet so useful to
-have on a laptop that occasionally needs a kick. No sign-up, no
-subscription, no in-app purchase, no trial timer. The source is right
+MyCooler is **open source, free, and built for personal use** — and I'm
+happy to share it with anyone else who needs the same thing. No sign-up,
+no subscription, no in-app purchase, no trial timer. The source is right
 here; if you don't trust it, read it.
+
+There are obvious moments when you want the fans louder than macOS
+thinks they should be — gaming is the headline case. Even a short
+session warms the chassis enough that the WASD area gets uncomfortable
+to rest fingers on, and macOS's thermal policy waits a beat too long
+before it ramps the fans, so the heat builds up under your palms before
+relief arrives. The same applies to long Xcode compiles, local LLM
+inference (Ollama, Stable Diffusion), and 4K exports in Final Cut /
+DaVinci.
+
+Heat matters longer-term, too. Sustained high temperatures accelerate
+lithium-ion battery wear — Apple's own guidance is to keep the device
+under 35 °C ambient — and the SoC throttles once it crosses its
+junction limit, dropping frames and slowing builds. Pre-spinning the
+fans a little earlier trades a tiny bit of noise for cooler hands,
+slower battery degradation over the years, and steadier performance
+under load. The reverse is supported too: force the fans to **0 RPM**
+for a silent Zoom call or screen recording, then hand control back when
+you're done.
 
 I'm a software engineer, but Mac and Swift aren't my day job. If
 something looks unidiomatic, the UI could use polish, or you spot a
