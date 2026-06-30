@@ -6,6 +6,7 @@
 import Foundation
 import Observation
 import OSLog
+import ServiceManagement
 
 private let log = Logger(subsystem: "com.andrii-kud.my-cooler", category: "FanController")
 
@@ -32,6 +33,14 @@ final class FanController {
     private(set) var writeError: String?
     private(set) var isUnlocking: Bool = false
     var helperStatus: HelperStatus = .unknown
+    /// Whether the helper actually answered an XPC ping. `nil` while a probe
+    /// is in flight (e.g. right after launch), distinct from a confirmed
+    /// `false`. `SMAppService.status` can read `.enabled` for a daemon that
+    /// still fails to spawn, so this is the source of truth for "usable".
+    private(set) var helperReachable: Bool?
+    private(set) var isReinstalling = false
+    /// Registered, approved, and answering XPC — fan control is usable.
+    var helperHealthy: Bool { helperStatus == .enabled && helperReachable == true }
     var lastError: String? { writeError ?? readError }
 
     var sharedMin: Float { fans.map(\.minRPM).max() ?? 0 }
@@ -70,6 +79,9 @@ final class FanController {
 
     private let smc: SMC?
     private let xpc = XPCClient()
+    private let helperService = SMAppService.daemon(
+        plistName: "com.andrii-kud.my-cooler.helper.plist"
+    )
     private var pollTask: Task<Void, Never>?
     private var suppressWrites = false
 
@@ -91,6 +103,115 @@ final class FanController {
     func clearError() {
         readError = nil
         writeError = nil
+    }
+
+    // MARK: - Helper registration
+
+    /// Registers the privileged helper with the Service Management framework
+    /// and then probes it over XPC. Called once at launch.
+    func registerHelper() {
+        clearQuarantine()
+        do {
+            try helperService.register()
+            helperStatus = mapStatus(helperService.status)
+            log.info("Helper registered: \(String(describing: self.helperService.status), privacy: .public)")
+        } catch {
+            let message = "Helper registration failed: \(error.localizedDescription)"
+            log.error("\(message, privacy: .public)")
+            helperStatus = .failed(message)
+        }
+        Task { await verifyHelperReachable() }
+    }
+
+    /// Tears down the existing registration and registers fresh. This is the
+    /// surgical repair for a helper that's registered but can't launch — e.g. a
+    /// Background Task Management record still bound to an app bundle that has
+    /// since moved or been deleted. Unlike `sfltool resetbtm`, it only touches
+    /// this app's daemon.
+    func reinstallHelper() async {
+        guard !isReinstalling else { return }
+        isReinstalling = true
+        defer { isReinstalling = false }
+
+        writeError = nil
+        helperReachable = nil
+        xpc.invalidate()
+        clearQuarantine()
+
+        do {
+            try await helperService.unregister()
+        } catch {
+            // A "job not found" here just means nothing was registered — it's
+            // harmless, and we register fresh below regardless.
+            log.info("Helper unregister: \(error.localizedDescription, privacy: .public)")
+        }
+
+        do {
+            try helperService.register()
+            helperStatus = mapStatus(helperService.status)
+            log.info("Helper re-registered: \(String(describing: self.helperService.status), privacy: .public)")
+        } catch {
+            let message = "Re-register failed: \(error.localizedDescription)"
+            log.error("\(message, privacy: .public)")
+            helperStatus = .failed(message)
+            helperReachable = false
+            return
+        }
+
+        await verifyHelperReachable()
+    }
+
+    /// Opens System Settings → Login Items & Extensions so the user can approve
+    /// the helper when it's awaiting approval.
+    func openLoginItemsSettings() {
+        SMAppService.openSystemSettingsLoginItems()
+    }
+
+    /// Pings the helper to confirm it really launches and answers, beyond what
+    /// `SMAppService.status` reports.
+    private func verifyHelperReachable() async {
+        guard helperStatus == .enabled else {
+            helperReachable = false
+            return
+        }
+        let reachable = await xpc.ping()
+        helperReachable = reachable
+        if !reachable {
+            log.error("Helper registered as enabled but not responding to XPC")
+        }
+    }
+
+    /// Best-effort removal of the `com.apple.quarantine` flag from the app
+    /// bundle and its embedded helper. macOS refuses to launch a quarantined
+    /// binary as a system daemon, and the flag is re-applied on every download
+    /// of this unnotarised build — so we strip it on the user's behalf instead
+    /// of making them run `xattr` in Terminal. No-ops cleanly when the
+    /// attribute is absent or the files aren't writable (e.g. translocated).
+    private func clearQuarantine() {
+        let bundleURL = Bundle.main.bundleURL
+        let targets = [
+            bundleURL,
+            bundleURL.appendingPathComponent("Contents/MacOS/com.andrii-kud.my-cooler.helper"),
+        ]
+        for url in targets {
+            let result = url.path.withCString { path in
+                removexattr(path, "com.apple.quarantine", 0)
+            }
+            // errno ENOATTR (no such attribute) just means it was already clean.
+            if result != 0 && errno != ENOATTR {
+                log.info("clearQuarantine \(url.lastPathComponent, privacy: .public): errno \(errno)")
+            }
+        }
+    }
+
+    private func mapStatus(_ status: SMAppService.Status) -> HelperStatus {
+        switch status {
+        case .enabled: return .enabled
+        case .requiresApproval: return .requiresApproval
+        case .notRegistered: return .notRegistered
+        case .notFound: return .failed("Helper not found in app bundle")
+        @unknown default: return .failed("Unknown helper status (\(status.rawValue))")
+        }
     }
 
     // MARK: - Take / release control via privileged helper

@@ -13,6 +13,9 @@ struct ContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             header
+            if helperIssue != nil {
+                helperBanner
+            }
             Divider()
             controls
             if !controller.fans.isEmpty {
@@ -54,11 +57,67 @@ struct ContentView: View {
         }
     }
 
+    // MARK: - Helper status
+
+    /// A human-readable reason the helper can't be used, or `nil` when it's
+    /// healthy (or still being probed right after launch).
+    private var helperIssue: String? {
+        switch controller.helperStatus {
+        case .enabled:
+            return controller.helperReachable == false
+                ? "The fan-control helper isn't responding. Tap Reinstall Helper to repair it."
+                : nil
+        case .requiresApproval:
+            return "MyCooler needs approval to run its helper. Tap Open Login Items and switch MyCooler on."
+        case .notRegistered:
+            return "The fan-control helper isn't installed yet. Tap Reinstall Helper to set it up."
+        case .failed(let message):
+            // "Operation not permitted" means the user disabled MyCooler in
+            // Settings — only re-enabling it there can lift that veto.
+            if message.localizedCaseInsensitiveContains("not permitted") {
+                return "macOS blocked the helper because MyCooler is switched off in Settings. Tap Open Login Items and switch MyCooler on."
+            }
+            return "Couldn't set up the fan-control helper. Try Reinstall Helper, or enable MyCooler under Login Items.\n(\(message))"
+        case .unknown:
+            return nil
+        }
+    }
+
+    private var helperBanner: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(helperIssue ?? "", systemImage: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(.orange)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 8) {
+                // Always offer Settings: if the user disabled the helper by hand,
+                // macOS refuses programmatic re-registration ("Operation not
+                // permitted") and only re-enabling it here can lift that veto.
+                Button("Open Login Items") {
+                    controller.openLoginItemsSettings()
+                }
+                .controlSize(.small)
+                Button("Reinstall Helper") {
+                    Task { await controller.reinstallHelper() }
+                }
+                .controlSize(.small)
+                .disabled(controller.isReinstalling)
+                if controller.isReinstalling {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+    }
+
     private var controls: some View {
         VStack(alignment: .leading, spacing: 10) {
             Toggle("Take control", isOn: $controller.controlEnabled)
                 .toggleStyle(.switch)
-                .disabled(controller.isUnlocking)
+                .disabled(controller.isUnlocking || helperIssue != nil)
             Toggle("Fan enabled", isOn: fanEnabledBinding)
                 .toggleStyle(.switch)
                 .disabled(!controller.controlEnabled || controller.isUnlocking)

@@ -5,10 +5,6 @@
 
 import SwiftUI
 import AppKit
-import ServiceManagement
-import OSLog
-
-private let appLog = Logger(subsystem: "com.andrii-kud.my-cooler", category: "App")
 
 @main
 struct my_coolerApp: App {
@@ -29,7 +25,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var popover: NSPopover?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        registerHelper()
+        controller.registerHelper()
 
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         if let button = item.button {
@@ -58,33 +54,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pop.behavior = .transient
         pop.contentViewController = hostingController
         popover = pop
-    }
-
-    // MARK: - Helper registration
-
-    private func registerHelper() {
-        let service = SMAppService.daemon(
-            plistName: "com.andrii-kud.my-cooler.helper.plist"
-        )
-        do {
-            try service.register()
-            controller.helperStatus = mapStatus(service.status)
-            appLog.info("Helper registered: status \(String(describing: service.status), privacy: .public)")
-        } catch {
-            let message = "Helper registration failed: \(error.localizedDescription)"
-            appLog.error("\(message, privacy: .public)")
-            controller.helperStatus = .failed(message)
-        }
-    }
-
-    private func mapStatus(_ status: SMAppService.Status) -> FanController.HelperStatus {
-        switch status {
-        case .enabled: return .enabled
-        case .requiresApproval: return .requiresApproval
-        case .notRegistered: return .notRegistered
-        case .notFound: return .failed("Helper not found in app bundle")
-        @unknown default: return .failed("Unknown helper status (\(status.rawValue))")
-        }
     }
 
     // MARK: - Click handling

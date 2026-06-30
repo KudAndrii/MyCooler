@@ -155,6 +155,39 @@ Requires **macOS 26 or later** and an Apple Silicon Mac.
    while you're actually moving sliders — launchd reaps it when the
    XPC connection closes.
 
+## Troubleshooting
+
+**The popover spins forever "accessing fans," and no helper appears in
+Activity Monitor.** This means launchd can't start the privileged
+helper. The usual cause is the **quarantine flag** macOS stamps on
+anything downloaded from the internet: the build isn't notarised, so
+the helper binary inside the app is quarantined, and macOS refuses to
+launch a quarantined binary as a system daemon (launchd kills it
+immediately with `EX_CONFIG`, retrying endlessly). Right-click → Open
+clears Gatekeeper for the main app but **not** for the nested helper
+binary.
+
+Fix it by stripping the quarantine flag from the whole bundle, then
+re-registering the helper:
+
+1. Quit MyCooler (right-click the menu-bar icon → **Quit**).
+2. Remove the quarantine attribute (recursively, so the embedded helper
+   is covered too):
+
+   ```sh
+   xattr -dr com.apple.quarantine /Applications/MyCooler.app
+   ```
+
+3. In **System Settings → General → Login Items & Extensions → App
+   Background Activity**, toggle **MyCooler** off (this clears the stale
+   registration).
+4. Relaunch **MyCooler** from `/Applications`; it re-registers the now
+   un-quarantined helper. Approve it again if prompted.
+
+This has to be redone every time you download a fresh copy of the DMG,
+because the download re-applies the quarantine flag. The real fix is
+notarising the build, which needs a paid Apple Developer account.
+
 ## Build from source
 
 For contributors, or if you want to tweak the code. Requires **Xcode 26
